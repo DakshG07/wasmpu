@@ -67,6 +67,7 @@ They also have a *type encoding*, which is a type of language type(so a type typ
 | `funcref` | `-0x10`         |
 | `func`    | `-0x20`         |
 | `void`    | `-0x40`         |
+
 *A neat table, stolen directly from the documentation*
 
 Now for the actual language types:
