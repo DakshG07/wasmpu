@@ -75,6 +75,7 @@ Now for the actual language types:
 - Table Element Types
 - *Signature Types*
 - Block Signature Types
+
 We're going to be focusing on signature types right now. Signature types are, in the end, really just any type defined in the Type Section, which is a section in the code that defines the types.
 This is getting confusing, isn't it?
 
@@ -85,6 +86,7 @@ Also, if the `form` is a `func`, which it is required to be, we get these two ex
   - An `array` of `value type`s. Consists of function paramters.
 - `returns`
   - An array of `value type`s. Consists of the function's returns.
+  
 The function must have a `returns` with *at least* one element.
 A `value type` is another `Language Type` which is the type of the input and output values of instructions once they are executed.
 
