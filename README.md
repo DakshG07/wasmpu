@@ -50,4 +50,51 @@ Finally, all the control-flow stack entries are popped until that position.
 
 **TLDR - If you've ever worked with assembly or done some research on CPUs, it's the equivalent of a jump.**
 
+Now, I've been glossing over quite a bit. For one thing, I haven't even *touched* signatures. So let's touch some signatures.
 
+### Touching signatures
+So WASM has this neat concept of types. Actually, WASM has a neat concept of a lot of things, which make it very nice and type safe and **extremely annoying to port**, especially to an actual CPU.
+But back to types. So there's two types of types(that's right, type types). Currently, we're going to be looking at language types. Language types are used to "describe runtime values and language constructs".
+In other words, important stuff.
+They also have a *type encoding*, which is a type of language type(so a type type type). Here's a neat table which showcases them:
+
+| Name      | Binary Encoding |
+| --------- | --------------- |
+| `i32`     | `-0x01`         |
+| `i64`     | `-0x02`         |
+| `f32`     | `-0x03`         |
+| `f64`     | `-0x04`         |
+| `funcref` | `-0x10`         |
+| `func`    | `-0x20`         |
+| `void`    | `-0x40`         |
+*A neat table, stolen directly from the documentation*
+
+Now for the actual language types:
+- Value Types
+- Table Element Types
+- *Signature Types*
+- Block Signature Types
+We're going to be focusing on signature types right now. Signature types are, in the end, really just any type defined in the Type Section, which is a section in the code that defines the types.
+This is getting confusing, isn't it?
+
+The Type Section(denoted by opcode `0x01`) is an array of function signatures. Yeah, every thing comes back full circle.
+A *function signature* consists of a `form`, which is a type `signature type`.
+Also, if the `form` is a `func`, which it is required to be, we get these two extra fields:
+- `params`
+  - An `array` of `value type`s. Consists of function paramters.
+- `returns`
+  - An array of `value type`s. Consists of the function's returns.
+The function must have a `returns` with *at least* one element.
+A `value type` is another `Language Type` which is the type of the input and output values of instructions once they are executed.
+
+Was that confusing? Probably. In short, we use signatures to define the inputs and outputs of instructions.
+
+Back to branches. The unconditional branch uses a signature of `block_arity` for input *and* output.
+The `block_arity` type really just tells you how many inputs and outputs are in the branching control-flow's stack entry.
+
+Conditional branches have a signature of `block_arity` *and* a `condition` of type `i32`. Note that in WASM, `i32` is used for booleans, with `0` being false and `1` being true.
+
+It's the same as an unconditional branch(using `$depth` to branch in the control-flow stack), but only if `condition` is true.
+Otherwise, it just "falls through" and lets execution proceed as normal.
+
+Both unconditional and conditional branches return the value of their `block_arity` operands.
