@@ -69,6 +69,7 @@ They also have a *type encoding*, which is a type of language type(so a type typ
 | `void`    | `-0x40`         |
 
 *A neat table, stolen directly from the documentation*
+*Thanks, documentation.*
 
 Now for the actual language types:
 - Value Types
@@ -101,3 +102,27 @@ It's the same as an unconditional branch(using `$depth` to branch in the control
 Otherwise, it just "falls through" and lets execution proceed as normal.
 
 Both unconditional and conditional branches return the value of their `block_arity` operands.
+
+## Analyzing some WASM
+Even though we've only looked at the bare basics, I feel like maybe we should take a look at some compiled WASM so we can get a better understanding of what happens under the hood.
+
+Now, let's steal an example from [this](https://hacks.mozilla.org/2017/02/creating-and-working-with-webassembly-modules/) article.
+
+In the article, they use this funciton:
+```c
+int add42(int num) {
+  return num + 42
+}
+```
+
+That's some pretty beautiful C code. Simple, beautiful, get-to-the-point. The resulting WASM?
+```wasm
+01 7F 01 7F 03 82 80 80 80 00 01 00 04 84 80 80
+80 00 01 70 00 00 05 83 80 80 80 00 01 00 01 06
+81 80 80 80 00 00 07 96 80 80 80 00 02 06 6D 65
+6D 6F 72 79 02 00 09 5F 5A 35 61 64 64 34 32 69
+00 00 0A 8D 80 80 80 00 01 87 80 80 80 00 00 20
+00 41 2A 6A 0B
+```
+
+Not so pretty. Pretty informative, though.
