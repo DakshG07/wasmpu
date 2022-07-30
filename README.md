@@ -216,6 +216,22 @@ So, now I can go bit-by-bit into that *scary* byte code.
 The first part, `00 61 73 6D 01 00 00 00 ` just lets us know our version of WASM(version `1`) and our "magic number"(I'll explain *later*). Then, we have `01 06`, which initiates our *type section*.
 The following `01 60 01 7C 01 7C` tells us that both our input and output are floats(`-0x04`). We then have a function section, which I haven't covered yet. TLDR, it defines all the module's functions and gives them indexes(in the bytecode, this is `03 02 01 00`).
 After that, we start the *export* section with `07 07`. The following `01 03 66 61 63 00 00` exports *amazing* `fac` function(`66 61 63` are it's ascii codes, `00` ends the string and then `00` is it's ID). This line correlates to `(export "fac" (func $func0))`
-`0A 2E` is the best part. It defines the *code section*. Now we can start coding.
+`0A 2E` is the best part. It defines the *code section*. Now we can start coding. (`0x0a` is the code section opcode, and it is followed by the number of bytes. In this case, that is 46, or `2E`.)
 
-[TO BE COMPLETED]
+Now, we have the function body, defined by `01 2C 00`. We can use our intuition to decode this. The `0x01` begins the function definition. The following `2C`, is *44*, and tells us that the function body itself is 44 bytes(this checks out).
+Lastly, the `00` is a list of local paramaters, which in this case is just 0(recall the `local.get 0`).
+
+Now, the actual code. We start with the [local.get](https://github.com/sunfishcode/wasm-reference-manual/blob/master/WebAssembly.md#get-local), which adds a local paramater to the stack.
+In the code, we see this as `20 00`, with `0x20` being the opcode for `local.get`. This is followed by the [f64.const](https://github.com/sunfishcode/wasm-reference-manual/blob/master/WebAssembly.md#constant) instruction, which adds a constant onto the stack.
+Note that since we are dealing with floats(an `f64`), this is quite long: `44 00 00 00 00 00 00 F0 3F`. This is equivalent to `f64.const 1`.
+We then perform `f64.lt`, which is just opcode `0x63`. Following that, we have an [if statement](https://github.com/sunfishcode/wasm-reference-manual/blob/master/WebAssembly.md#if), which binds the `(result f64)`.
+Recall that an `f64` is represented as `7C`, giving us `04 7C`. We then have a line to add an `f64.const 1`, which adds 1 to the stack, and is the same `44 00 00 00 00 00 00 F0 3F` from before.
+We then have an [else](https://github.com/sunfishcode/wasm-reference-manual/blob/master/WebAssembly.md#else), which would bind the `if`'s unbound label on the control flow stack.
+Following the else, we have `20 00`, which, if you'll remember, means to get the first local variable. Then, we do it again, so another `20 00`. We have yet *another* `44 00 00 00 00 00 00 F0 3F`, because adding 1s to the stack is quite common in this program.
+We then call [subtract](https://github.com/sunfishcode/wasm-reference-manual/blob/master/WebAssembly.md#floating-point-subtract), which for an `f64` is opcode `0xa1`, giving us the `A1` in the code.
+Remember back in the export, where we set the function id to zero? We can call that function now. We use the [call function](https://github.com/sunfishcode/wasm-reference-manual/blob/master/WebAssembly.md#call), which has opcode `0x10`, to call the function again(recursion!). WASM natively supports recursion, which means this chip will have to too. These function actually have a special call stack. You can learn more about calling [here](https://github.com/sunfishcode/wasm-reference-manual/blob/master/WebAssembly.md#calling).
+Lastly, we call a [floating point multiply](https://github.com/sunfishcode/wasm-reference-manual/blob/master/WebAssembly.md#floating-point-multiply) on the stack, using the `A2` operation. This final result is passed in as the return value(if the function was called, which it most likely was, it'll be put onto the stack.)
+
+Now, at this point in time, I'd written very little code. So I thought it would be a good time to start writing something now. This *fairly basic* program implements a lot of core functionality of WASM, therefore I want to start by implementing enough instructions for *this specific program* to run.
+
+So let's give it a go!
