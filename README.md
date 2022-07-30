@@ -191,3 +191,31 @@ It then adds an `i32` of either `0` or `1`(our fake boolean) onto the stack. The
 Otherwise, it adds our paramter onto the stack *twice*, and then another one. It then subtracts them, popping the top two values off the stack, subtracting them(with the second value first), and then putting the result back onto the stack.
 We then call the `fac`torial function on this number in the stack, which leaves us with two things on the (program) stack: our original paramater and the result of the factorial. We multiply these two things together and set `(result f64)` to this value.
 Lastly, we call `end` to end the funciton.
+
+Now, are you ready for something a *lot* more challenging? Probably not. But I don't care!
+Here's the *compiled* WASM bytecode:
+```
+00 61 73 6D 01 00 00 00 01 06 01 60 01 7C 01 7C
+03 02 01 00 07 07 01 03 66 61 63 00 00 0A 2E 01
+2C 00 20 00 44 00 00 00 00 00 00 F0 3F 63 04 7C
+44 00 00 00 00 00 00 F0 3F 05 20 00 20 00 44 00
+00 00 00 00 00 F0 3F A1 10 00 A2 0B 0B 00 12 04
+6E 61 6D 65 01 06 01 00 03 66 61 63 02 03 01 00
+00
+```
+
+*Note: this isn't the *actual* binary. It's the binary, written in hex because it's a lot more consise and way easier to understand.*
+
+Kind of scary, isn't it? Luckily, [this amazing tool](https://wasdk.github.io/wasmcodeexplorer/) exists, and it's a *lifesaver*.
+
+I just loaded up the WASM file and immediately it decompiled it and highlighted parts of the binary for me.
+It was *incredibly* helpful and I implore *you* to check it out!
+
+So, now I can go bit-by-bit into that *scary* byte code.
+
+The first part, `00 61 73 6D 01 00 00 00 ` just lets us know our version of WASM(version `1`) and our "magic number"(I'll explain *later*). Then, we have `01 06`, which initiates our *type section*.
+The following `01 60 01 7C 01 7C` tells us that both our input and output are floats(`-0x04`). We then have a function section, which I haven't covered yet. TLDR, it defines all the module's functions and gives them indexes(in the bytecode, this is `03 02 01 00`).
+After that, we start the *export* section with `07 07`. The following `01 03 66 61 63 00 00` exports *amazing* `fac` function(`66 61 63` are it's ascii codes, `00` ends the string and then `00` is it's ID). This line correlates to `(export "fac" (func $func0))`
+`0A 2E` is the best part. It defines the *code section*. Now we can start coding.
+
+[TO BE COMPLETED]
