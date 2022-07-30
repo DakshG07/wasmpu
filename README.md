@@ -106,23 +106,88 @@ Both unconditional and conditional branches return the value of their `block_ari
 ## Analyzing some WASM
 Even though we've only looked at the bare basics, I feel like maybe we should take a look at some compiled WASM so we can get a better understanding of what happens under the hood.
 
-Now, let's steal an example from [this](https://hacks.mozilla.org/2017/02/creating-and-working-with-webassembly-modules/) article.
+Now, let's steal an example from [this](https://rsms.me/wasm-intro) article.
 
-In the article, they use this funciton:
+So we start with a very simple halving program. Here's how it would look in C:
 ```c
-int add42(int num) {
-  return num + 42
+int half(int x) {
+  return x/2;
 }
 ```
 
-That's some pretty beautiful C code. Simple, beautiful, get-to-the-point. The resulting WASM?
-```wasm
-01 7F 01 7F 03 82 80 80 80 00 01 00 04 84 80 80
-80 00 01 70 00 00 05 83 80 80 80 00 01 00 01 06
-81 80 80 80 00 00 07 96 80 80 80 00 02 06 6D 65
-6D 6F 72 79 02 00 09 5F 5A 35 61 64 64 34 32 69
-00 00 0A 8D 80 80 80 00 01 87 80 80 80 00 00 20
-00 41 2A 6A 0B
+Here's a portion of the `.wat` result:
+```wat
+get_local 0
+i32.const 2
+i32.div_u
 ```
 
-Not so pretty. Pretty informative, though.
+Let's break it down:
+
+`get_local 0` just pushes paramter `0` onto the stack.
+
+`i32.const 2` pushes the number 2 onto the stack.
+
+`i32.div_u` does (unsigned)division. Unsigned just means that we're working only with positive numbers(instead of two's complement).
+
+Lastly, `end` just ends the function. Well, that's nice. Actually working with integers in WASM is pretty convinient, because it has 29 different integer operations. That *won't* be fun to implement.
+
+Here's a more complex *factorial* program:
+```c
+int64 factorial(int64 n) {
+  return (n == 0) ? 1
+                  : n * factorial(n - 1)
+}
+```
+
+That's some normal C code I stole from the article. Here's the resulting WAT:
+```wat
+(module
+  (type $t0 (func (param f64) (result f64)))
+  (func $fac (export "fac") (type $t0) (param $p0 f64) (result f64)
+    (if $I0 (result f64)
+      (f64.lt
+        (local.get $p0)
+        (f64.const 0x1p+0 (;=1;)))
+      (then
+        (f64.const 0x1p+0 (;=1;)))
+      (else
+        (f64.mul
+          (local.get $p0)
+          (call $fac
+            (f64.sub
+              (local.get $p0)
+              (f64.const 0x1p+0 (;=1;)))))))))
+```
+
+*Note, this is what I get from wasm2wat*
+
+So this is our *module*. This WASM module would be imported into a main WASM, which would probably run a little program(or, eventually, an operating system) directly on the hardware.
+
+Firstly, we can see our *type  section*. It has one `$t0` type, which defines a function which takes an and outputs an `f64` float.
+We then define said function *using* the type(the *signature*).
+After that, we have an `if`. Under the hood, the `if` adds a control-flow stack entry to the program which contains an *unbound label*. If it's condition is false, it branches according to that label.
+
+Remember how branching works? It will skip ahead until it finds something that *defines* the label, which would happen to be an *end*, or, in our case, and `else`.
+The `then` statement is *useless*, it's only there to differentiate from the `if` contents and what to actually do. In reality, WASM is a stack machine, so that whole part is more neatly represented as this:
+```wat
+  local.get $p0
+  f64.const 1
+  f64.lt
+  if (result f64)
+    f64.const 1
+  else
+    local.get $p0
+    local.get $p0
+    f64.const 1
+    f64.sub
+    call $fac
+    f64.mul
+```
+
+Isn't that so much nicer? I think so. You may have some confusion as to what goes on here. So let me clarify.
+We get the first parameter, and put it on the stack. We then add an `f64` 1 onto the stack. The `f64.lt` operation pops the first value off the stack, and then pops the second value off to see if it's less than the first value.
+It then adds an `i32` of either `0` or `1`(our fake boolean) onto the stack. The `if` then checks if this is true. If it is true, then our value is 0, and it sets `(result f64)` to `1`.
+Otherwise, it adds our paramter onto the stack *twice*, and then another one. It then subtracts them, popping the top two values off the stack, subtracting them(with the second value first), and then putting the result back onto the stack.
+We then call the `fac`torial function on this number in the stack, which leaves us with two things on the (program) stack: our original paramater and the result of the factorial. We multiply these two things together and set `(result f64)` to this value.
+Lastly, we call `end` to end the funciton.
