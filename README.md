@@ -235,3 +235,5 @@ Lastly, we call a [floating point multiply](https://github.com/sunfishcode/wasm-
 Now, at this point in time, I'd written very little code. So I thought it would be a good time to start writing something now. This *fairly basic* program implements a lot of core functionality of WASM, therefore I want to start by implementing enough instructions for *this specific program* to run.
 
 So let's give it a go!
+
+I started by defining our control-flow, program, and call stacks. If we need more stacks, we'll add them in later. A `Vec<u8>` works perfectly for the cause. Next, we check the magic number. This is just the `\0asm` at the beginning of the file. I like to call this our `sus detector`.
