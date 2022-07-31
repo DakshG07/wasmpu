@@ -237,3 +237,5 @@ Now, at this point in time, I'd written very little code. So I thought it would 
 So let's give it a go!
 
 I started by defining our control-flow, program, and call stacks. If we need more stacks, we'll add them in later. A `Vec<u8>` works perfectly for the cause. Next, we check the magic number. This is just the `\0asm` at the beginning of the file. I like to call this our `sus detector`.
+
+Next. We need to figure out parsing the type section. Numbers are encoded using LEB, and refer to the types. Now, for the life of me, I can't find *any* documentation on what the things that come after the `0x01` but before the array actually *mean*.
