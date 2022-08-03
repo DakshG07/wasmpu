@@ -9,6 +9,6 @@ SET msg=%%F
 FOR /F "tokens=* USEBACKQ" %%F IN (`gum write --placeholder "Description of change"`) DO (
 SET desc=%%F
 )
-gum confirm "Commit changes?" && git commit -m "%summary%" -m "%desc%"
-#
+gum confirm "Commit changes?" && git commit -m "%msg%" -m "%desc%"
+
 
