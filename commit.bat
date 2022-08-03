@@ -10,4 +10,5 @@ FOR /F "tokens=* USEBACKQ" %%F IN (`gum write --placeholder "Description of chan
 SET desc=%%F
 )
 gum confirm "Commit changes?" && git commit -m "%summary%" -m "%desc%"
+#
 
